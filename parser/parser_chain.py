@@ -1,7 +1,5 @@
 import requests
-from config import *
 from bs4 import BeautifulSoup
-import lxml
 import re
 
 

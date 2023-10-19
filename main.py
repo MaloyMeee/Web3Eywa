@@ -1,12 +1,8 @@
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
-from config import *
 import datetime
-from address import address_list
+from settings.address import address_list
 from parser.parser_chain import *
-import openpyxl
-
+from settings.config import *
 
 def connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet: str) -> object | None:
     try:
