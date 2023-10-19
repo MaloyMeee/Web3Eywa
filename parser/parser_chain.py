@@ -36,6 +36,10 @@ def get_tokens_transfered(request: object, tx) -> list | None:
         amount = first_li_div.find_all("span", class_="mr-1")[3].text
         if first_info == "EUSD (EUSD) ":
             return ["EUSD (EUSD) ", "EUSD (EUSD) ", amount]
+        else:
+            pattern = re.search(r"s(\w+)\W*\w?_(\w+)", first_info)[2]
+            return [f"sUSDT_{pattern}", f"sUSDT_{pattern}", amount]
+
     except Exception as e:
         print(f"ERROR in getting information about chains {e} | {tx}")
         return None
@@ -52,7 +56,7 @@ def get_token_and_chain_from_info(info: list) -> list | None:
             if info[0] == 'EUSD (EUSD) ' and info[1] == 'EUSD (EUSD) ':
                 destination_chain = "FTM"
                 source_chain = "FTM"
-                chain = [source_chain, destination_chain,info[2]]
+                chain = [source_chain, destination_chain, info[2]]
                 return chain
             try:
                 if info[0] == 'EUSD (EUSD) ' or re.search(r'(Curve)', info[0])[1] != None:
@@ -68,9 +72,9 @@ def get_token_and_chain_from_info(info: list) -> list | None:
                         chain = [source_chain, destination_chain, info[2]]
                         return chain
                 except Exception as e:
-                    print(f"ERROR {info} {e}")
+                    print(f"ERROR 1 {info} {e}")
                     return None
         except Exception as e:
-            print(f"ERROR {info} {e}")
-        print(f"ERROR {info} {e}")
+            print(f"ERROR 2 {info} {e} |")
+        print(f"ERROR 3 {info} {e}")
         return None
