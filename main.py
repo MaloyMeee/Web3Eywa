@@ -8,9 +8,6 @@ from parser.parser_chain import *
 import openpyxl
 
 
-# TODO:
-# Фикс ошибок с монетами без сетей
-
 def connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet: str) -> object | None:
     try:
         request = requests.get(f"https://pusher.eywa.fi/search?limit=1000&search={wallet}", timeout=10)
@@ -49,13 +46,13 @@ def get_list_all_transactions_chain(all_transaction: object) -> list:
                 if source_chain_id == "250":
                     tx = source.get("transactionHash")
                     connect = connect_to_ftmscan(tx)
-                    info = get_tokens_transfered(connect)
+                    info = get_tokens_transfered(connect, tx)
                     sourse_destination = get_token_and_chain_from_info(info)
                     all_transacrions_chain.append(sourse_destination)
                 elif destination_chain_id == "250":
                     tx = destination.get("transactionHash")
                     connect = connect_to_ftmscan(tx)
-                    info = get_tokens_transfered(connect)
+                    info = get_tokens_transfered(connect, tx)
                     sourse_destination = get_token_and_chain_from_info(info)
                     all_transacrions_chain.append(sourse_destination)
                 else:
