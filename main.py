@@ -77,13 +77,16 @@ def build_chain_matrix() -> object:
 
 def enter_df_from_transaction(df: object, transactions: list) -> object:
     try:
+        amount = 0
         for pair in transactions:
             if pair == None:
                 continue
             df.loc[pair[0], pair[1]] += 1
-        return df
+            amount += float(pair[2])
+        return df, amount
     except Exception as e:
         print("Error when enter transaction in df")
+
 
 
 def rebuild_df_with_name_of_chain(df: object, chain_list: list) -> object:
@@ -111,9 +114,11 @@ if __name__ == '__main__':
             request = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
             all_transaction = get_all_transaction(request)
             all_chain = get_list_all_transactions_chain(all_transaction)
-            df = enter_df_from_transaction(build_chain_matrix(), all_chain)
-            # normal_df = rebuild_df_with_name_of_chain(df, chains_list)
+            df, amount = enter_df_from_transaction(build_chain_matrix(), all_chain)
             print(df)
+            print(amount)
+            req = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
+            print(f"Total transaction: {get_number_of_total_transaction(req)}")
             filename = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.xlsx"
             df.to_excel(filename, sheet_name=wallet[:6])
         elif choise == "3":
@@ -125,10 +130,12 @@ if __name__ == '__main__':
                         request = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
                         all_transaction = get_all_transaction(request)
                         all_chain = get_list_all_transactions_chain(all_transaction)
-                        df = enter_df_from_transaction(build_chain_matrix(), all_chain)
-                        normal_df = rebuild_df_with_name_of_chain(df, chains_list)
-                        print(normal_df)
-                        normal_df.to_excel(writer, sheet_name=wallet[:6])
+                        df, amount = enter_df_from_transaction(build_chain_matrix(), all_chain)
+                        print(df)
+                        print(f"Total Volume: {amount}")
+                        req = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
+                        print(f"Total transaction: {get_number_of_total_transaction(req)}")
+                        df.to_excel(writer, sheet_name=wallet[:6])
                 except Exception as e:
                     print("Error in 3). Check address_list in address.py")
         elif choise == "q":
