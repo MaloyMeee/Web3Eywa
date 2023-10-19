@@ -45,27 +45,27 @@ def get_token_and_chain_from_info(info: list) -> list | None:
     try:
         source_chain = re.search(r"s(\w+)\W*\w?_(\w+)", info[0])[2]
         destination_chain = re.search(r"s(\w+)\W*\w?_(\w+)", info[1])[2]
-        chain = [source_chain, destination_chain]
+        chain = [source_chain, destination_chain, info[2]]
         return chain
     except Exception as e:
         try:
             if info[0] == 'EUSD (EUSD) ' and info[1] == 'EUSD (EUSD) ':
                 destination_chain = "FTM"
                 source_chain = "FTM"
-                chain = [source_chain, destination_chain]
+                chain = [source_chain, destination_chain,info[2]]
                 return chain
             try:
                 if info[0] == 'EUSD (EUSD) ' or re.search(r'(Curve)', info[0])[1] != None:
                     source_chain = "FTM"
                     destination_chain = re.search(r"s(\w+)\W*\w?_(\w+)", info[1])[2]
-                    chain = [source_chain, destination_chain]
+                    chain = [source_chain, destination_chain, info[2]]
                     return chain
             except Exception as e:
                 try:
                     if info[1] == 'EUSD (EUSD) ' or re.search(r'(Curve)', info[1])[1] != None:
                         destination_chain = "FTM"
                         source_chain = re.search(r"s(\w+)\W*\w?_(\w+)", info[0])[2]
-                        chain = [source_chain, destination_chain]
+                        chain = [source_chain, destination_chain, info[2]]
                         return chain
                 except Exception as e:
                     print(f"ERROR {info} {e}")
