@@ -59,7 +59,7 @@ def get_list_all_transactions_chain(all_transaction: object) -> list:
                     source_destination = [source_chain_id, destination_chain_id]
                     all_transacrions_chain.append(source_destination)
             except Exception as e:
-                print(f"ERROR {e}")
+                print(f"ERROR {e} | {i}")
                 continue
         print("----")
         return all_transacrions_chain
