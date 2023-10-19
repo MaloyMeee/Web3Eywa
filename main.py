@@ -4,7 +4,12 @@ import pandas as pd
 from config import *
 import datetime
 from address import address_list
+from parser.parser_chain import *
+import openpyxl
 
+
+# TODO:
+# Фикс ошибок с монетами без сетей
 
 def connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet: str) -> object | None:
     try:
@@ -36,30 +41,53 @@ def get_list_all_transactions_chain(all_transaction: object) -> list:
     try:
         all_transacrions_chain = []
         for i in all_transaction:
-            source = i.get("source", {})
-            source_chain_id = source.get("chainId")
-            destination = i.get("destination", {})
-            destination_chain_id = destination.get("chainId")
-            source_destination = [source_chain_id, destination_chain_id]
-            all_transacrions_chain.append(source_destination)
+            try:
+                source = i.get("source", {})
+                source_chain_id = source.get("chainId")
+                destination = i.get("destination", {})
+                destination_chain_id = destination.get("chainId")
+                if source_chain_id == "250":
+                    tx = source.get("transactionHash")
+                    connect = connect_to_ftmscan(tx)
+                    info = get_tokens_transfered(connect)
+                    sourse_destination = get_token_and_chain_from_info(info)
+                    all_transacrions_chain.append(sourse_destination)
+                elif destination_chain_id == "250":
+                    tx = destination.get("transactionHash")
+                    connect = connect_to_ftmscan(tx)
+                    info = get_tokens_transfered(connect)
+                    sourse_destination = get_token_and_chain_from_info(info)
+                    all_transacrions_chain.append(sourse_destination)
+                else:
+                    source_destination = [source_chain_id, destination_chain_id]
+                    all_transacrions_chain.append(source_destination)
+            except Exception as e:
+                print(f"ERROR {e}")
+                continue
+        print("----")
         return all_transacrions_chain
     except Exception as e:
         print("Error when get transaction chain")
 
+
 def build_chain_matrix() -> object:
     try:
-        df = pd.DataFrame(0, index=chains_list_rev, columns=chains_list_rev)
+        df = pd.DataFrame(0, index=chains_list, columns=chains_list)
         return df
     except Exception as e:
         print("Error when build chain matrix")
 
+
 def enter_df_from_transaction(df: object, transactions: list) -> object:
     try:
         for pair in transactions:
-            df.loc[int(pair[0]), int(pair[1])] += 1
+            if pair == None:
+                continue
+            df.loc[pair[0], pair[1]] += 1
         return df
     except Exception as e:
         print("Error when enter transaction in df")
+
 
 def rebuild_df_with_name_of_chain(df: object, chain_list: list) -> object:
     try:
@@ -68,6 +96,7 @@ def rebuild_df_with_name_of_chain(df: object, chain_list: list) -> object:
         return df
     except Exception as e:
         print("Error when rebuild matrix")
+
 
 if __name__ == '__main__':
     while True:
@@ -86,10 +115,10 @@ if __name__ == '__main__':
             all_transaction = get_all_transaction(request)
             all_chain = get_list_all_transactions_chain(all_transaction)
             df = enter_df_from_transaction(build_chain_matrix(), all_chain)
-            normal_df = rebuild_df_with_name_of_chain(df, chains_list)
-            print(normal_df)
+            # normal_df = rebuild_df_with_name_of_chain(df, chains_list)
+            print(df)
             filename = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.xlsx"
-            df.to_excel(f"{filename}.xlsx", sheet_name=wallet[:6])
+            df.to_excel(filename, sheet_name=wallet[:6])
         elif choise == "3":
             filename = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.xlsx"
             with pd.ExcelWriter(filename) as writer:
