@@ -1,139 +1,57 @@
-import pandas as pd
-import datetime
-from settings.address import address_list
-from parser.parser_chain import *
-from settings.config import *
+from logic import *
 
-def connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet: str) -> object | None:
-    try:
-        request = requests.get(f"https://pusher.eywa.fi/search?limit=1000&search={wallet}", timeout=10)
-        json_data = request.json()
-        return json_data
-    except requests.exceptions.Timeout as e:
-        print("ERROR timeout when connecting to explorer")
-        return None
+print("""
+░██╗░░░░░░░██╗███████╗██████╗░██████╗░███████╗██╗░░░██╗░██╗░░░░░░░██╗░█████╗░
+░██║░░██╗░░██║██╔════╝██╔══██╗╚════██╗██╔════╝╚██╗░██╔╝░██║░░██╗░░██║██╔══██╗
+░╚██╗████╗██╔╝█████╗░░██████╦╝░█████╔╝█████╗░░░╚████╔╝░░╚██╗████╗██╔╝███████║
+░░████╔═████║░██╔══╝░░██╔══██╗░╚═══██╗██╔══╝░░░░╚██╔╝░░░░████╔═████║░██╔══██║
+░░╚██╔╝░╚██╔╝░███████╗██████╦╝██████╔╝███████╗░░░██║░░░░░╚██╔╝░╚██╔╝░██║░░██║By
+░░░╚═╝░░░╚═╝░░╚══════╝╚═════╝░╚═════╝░╚══════╝░░░╚═╝░░░░░░╚═╝░░░╚═╝░░╚═╝░░╚═╝  [G7]AzaZLO""")
 
 
-def get_number_of_total_transaction(json_data: object) -> object:
-    try:
-        total = json_data.get("total", {})
-        return total
-    except Exception as e:
-        print("ERROR when getting number of total transactions")
+def check_total_number_of_transaction_by_address(wallet: str) -> None:
+    json_data = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
+    print(f"Total number of transaction:{get_number_of_total_transaction(json_data)}")
 
 
-def get_all_transaction(json_data: object) -> object:
-    try:
-        all_transaction = json_data.get("result", {})
-        return all_transaction
-    except Exception as e:
-        print("ERROR when getting all transaction")
+def table_on_transfers_from_networks_to_networks_by_adrress() -> None:
+    wallet = input("Enter wallet address: ")
+    json_data = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
+    all_transaction = get_all_transactions(json_data)
+    x = get_chainlist_and_amount_in_all_transaction(all_transaction)
+    df = build_chain_matrix()
+    dff, amount, total_transactions = enter_df_from_transaction(df, x)
+    print(rebuild_df_with_name_of_chain(df))
+    print(f"Total number of transactions: {total_transactions}")
+    print(f"Total volume: {amount}")
 
 
-def get_list_all_transactions_chain(all_transaction: object) -> list:
-    try:
-        all_transacrions_chain = []
-        for i in all_transaction:
-            try:
-                source = i.get("source", {})
-                source_chain_id = source.get("chainId")
-                destination = i.get("destination", {})
-                destination_chain_id = destination.get("chainId")
-                if source_chain_id == "250":
-                    tx = source.get("transactionHash")
-                    connect = connect_to_ftmscan(tx)
-                    info = get_tokens_transfered(connect, tx)
-                    sourse_destination = get_token_and_chain_from_info(info)
-                    all_transacrions_chain.append(sourse_destination)
-                elif destination_chain_id == "250":
-                    tx = destination.get("transactionHash")
-                    connect = connect_to_ftmscan(tx)
-                    info = get_tokens_transfered(connect, tx)
-                    sourse_destination = get_token_and_chain_from_info(info)
-                    all_transacrions_chain.append(sourse_destination)
-                else:
-                    source_destination = [source_chain_id, destination_chain_id]
-                    all_transacrions_chain.append(source_destination)
-            except Exception as e:
-                print(f"ERROR {e} | {i}")
-                continue
-        print("----")
-        return all_transacrions_chain
-    except Exception as e:
-        print("Error when get transaction chain")
-
-
-def build_chain_matrix() -> object:
-    try:
-        df = pd.DataFrame(0, index=chains_list, columns=chains_list)
-        return df
-    except Exception as e:
-        print("Error when build chain matrix")
-
-
-def enter_df_from_transaction(df: object, transactions: list) -> object:
-    try:
-        amount = 0
-        for pair in transactions:
-            if pair == None:
-                continue
-            df.loc[pair[0], pair[1]] += 1
-            amount += float(pair[2])
-        return df, amount
-    except Exception as e:
-        print("Error when enter transaction in df")
-
-
-
-def rebuild_df_with_name_of_chain(df: object, chain_list: list) -> object:
-    try:
-        df.columns = chain_list
-        df.index = chain_list
-        return df
-    except Exception as e:
-        print("Error when rebuild matrix")
+def table_on_transfers_from_networks_to_networks_by_adrress_list() -> None:
+    for i in get_address_list_from_file():
+        json_data = connect_to_eywa_explorer_and_get_transaction_per_wallet(i)
+        all_transaction = get_all_transactions(json_data)
+        x = get_chainlist_and_amount_in_all_transaction(all_transaction)
+        df = build_chain_matrix()
+        dff, amount, total_transactions = enter_df_from_transaction(df, x)
+        print(rebuild_df_with_name_of_chain(df))
+        print(f"Total number of transactions: {total_transactions}")
+        print(f"Total volume: {amount}")
 
 
 if __name__ == '__main__':
     while True:
-        print("1) Check the total number of transactions by address")
+        print("1) Check the number of transactions, taking into account service transactions, by burn type")
         print("2) Table on transfers from networks to networks by address")
         print("3) Table on transfers from networks to networks by address list")
         print("q) Exit")
         choise = input("-> ")
         if choise == "1":
             wallet = input("Enter wallet address: ")
-            req = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
-            print(f"Total: {get_number_of_total_transaction(req)}")
+            check_total_number_of_transaction_by_address(wallet)
         elif choise == "2":
-            wallet = input("Enter wallet address: ")
-            request = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
-            all_transaction = get_all_transaction(request)
-            all_chain = get_list_all_transactions_chain(all_transaction)
-            df, amount = enter_df_from_transaction(build_chain_matrix(), all_chain)
-            print(df)
-            print(amount)
-            req = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
-            print(f"Total transaction: {get_number_of_total_transaction(req)}")
-            filename = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.xlsx"
-            df.to_excel(filename, sheet_name=wallet[:6])
+            table_on_transfers_from_networks_to_networks_by_adrress()
         elif choise == "3":
-            filename = f"{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.xlsx"
-            with pd.ExcelWriter(filename) as writer:
-                try:
-                    for i in address_list:
-                        wallet = i
-                        request = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
-                        all_transaction = get_all_transaction(request)
-                        all_chain = get_list_all_transactions_chain(all_transaction)
-                        df, amount = enter_df_from_transaction(build_chain_matrix(), all_chain)
-                        print(df)
-                        print(f"Total Volume: {amount}")
-                        req = connect_to_eywa_explorer_and_get_transaction_per_wallet(wallet)
-                        print(f"Total transaction: {get_number_of_total_transaction(req)}")
-                        df.to_excel(writer, sheet_name=wallet[:6])
-                except Exception as e:
-                    print("Error in 3). Check address_list in address.py")
+            table_on_transfers_from_networks_to_networks_by_adrress_list()
         elif choise == "q":
             exit()
         else:
